@@ -31,7 +31,7 @@ class SharedArray {
     }
     void addChar(char c) {
         if (usemutex) {
-#pragma omp critical
+#pragma omp ordered
             {
                 array[index] = c;
                 spendSomeTime();
@@ -78,10 +78,10 @@ class ArrayFiller {
         array = new SharedArray(wSize, usemutex);
     }
     void fillArrayConcurrently() {
-        if(!runtime)
+        if (!runtime)
             omp_set_schedule(sched, chunk);
 
-        #pragma omp parallel for schedule(runtime) shared(array)
+#pragma omp parallel for schedule(runtime) shared(array) ordered
         for (int i = 0; i < wSize; i++) {
             array->addChar('A' + omp_get_thread_num());
         }
@@ -115,63 +115,79 @@ int main(int argc, char const *argv[]) {
     chunk = atoi(argv[3]);    // chunk = carga de trabalho
 
     omp_set_num_threads(nthreads);
-    // RUNTIME COM E SEM MUTEX 
+    // RUNTIME COM E SEM MUTEX
     ArrayFiller run(nthreads, worksize, true, omp_sched_auto, -1, true);
     run.fillArrayConcurrently();
-    std::cout << "runtime mutex nope  "; run.printStats();
+    std::cout << "runtime mutex nope  ";
+    run.printStats();
     run.invert();
     run.fillArrayConcurrently();
-    std::cout << "runtime nope  nope  "; run.printStats();
+    std::cout << "runtime nope  nope  ";
+    run.printStats();
     // STATIC COM MUTEX, COM E SEM CHUNK
     ArrayFiller sta_ch(nthreads, worksize, true, omp_sched_static, chunk);
     ArrayFiller sta(nthreads, worksize, true, omp_sched_static);
     sta_ch.fillArrayConcurrently();
     sta.fillArrayConcurrently();
-    std::cout << "static  mutex chunk "; sta_ch.printStats();
-    std::cout << "static  mutex nope  "; sta.printStats();
+    std::cout << "static  mutex chunk ";
+    sta_ch.printStats();
+    std::cout << "static  mutex nope  ";
+    sta.printStats();
     // DYNAMIC COM MUTEX, COM E SEM CHUNK
     ArrayFiller dyn_ch(nthreads, worksize, true, omp_sched_dynamic, chunk);
     ArrayFiller dyn(nthreads, worksize, true, omp_sched_dynamic);
     dyn_ch.fillArrayConcurrently();
     dyn.fillArrayConcurrently();
-    std::cout << "dynamic mutex chunk "; dyn_ch.printStats();
-    std::cout << "dynamic mutex nope  "; dyn.printStats();
+    std::cout << "dynamic mutex chunk ";
+    dyn_ch.printStats();
+    std::cout << "dynamic mutex nope  ";
+    dyn.printStats();
     // AUTO COM MUTEX, COM E SEM CHUNK
     ArrayFiller aut(nthreads, worksize, true, omp_sched_auto);
     aut.fillArrayConcurrently();
-    std::cout << "auto    mutex nope  "; aut.printStats();
+    std::cout << "auto    mutex nope  ";
+    aut.printStats();
     // GUIDED COM MUTEX, COM E SEM CHUNK
     ArrayFiller gui_ch(nthreads, worksize, true, omp_sched_guided, chunk);
     ArrayFiller gui(nthreads, worksize, true, omp_sched_guided);
     gui_ch.fillArrayConcurrently();
     gui.fillArrayConcurrently();
-    std::cout << "guided  mutex chunk "; gui_ch.printStats();
-    std::cout << "guided  mutex nope  "; gui.printStats();
+    std::cout << "guided  mutex chunk ";
+    gui_ch.printStats();
+    std::cout << "guided  mutex nope  ";
+    gui.printStats();
 
     // STATIC SEM MUTEX, COM E SEM CHUNK
     sta_ch.invert();
     sta.invert();
     sta_ch.fillArrayConcurrently();
     sta.fillArrayConcurrently();
-    std::cout << "static  nope  chunk "; sta_ch.printStats();
-    std::cout << "static  nope  nope  "; sta.printStats();
+    std::cout << "static  nope  chunk ";
+    sta_ch.printStats();
+    std::cout << "static  nope  nope  ";
+    sta.printStats();
     // DYNAMIC SEM MUTEX, COM E SEM CHUNK
     dyn.invert();
     dyn_ch.invert();
     dyn_ch.fillArrayConcurrently();
     dyn.fillArrayConcurrently();
-    std::cout << "dynamic nope  chunk "; dyn_ch.printStats();
-    std::cout << "dynamic nope  nope  "; dyn.printStats();
+    std::cout << "dynamic nope  chunk ";
+    dyn_ch.printStats();
+    std::cout << "dynamic nope  nope  ";
+    dyn.printStats();
     // AUTO SEM MUTEX
     aut.invert();
     aut.fillArrayConcurrently();
-    std::cout << "auto    nope  nope  "; aut.printStats();
+    std::cout << "auto    nope  nope  ";
+    aut.printStats();
     // GUIDED SEM MUTEX, COM E SEM CHUNK
     gui.invert();
     gui_ch.invert();
     gui_ch.fillArrayConcurrently();
     gui.fillArrayConcurrently();
-    std::cout << "guided  nope  chunk "; gui_ch.printStats();
-    std::cout << "guided  nope  nope  "; gui.printStats();
+    std::cout << "guided  nope  chunk ";
+    gui_ch.printStats();
+    std::cout << "guided  nope  nope  ";
+    gui.printStats();
     return EXIT_SUCCESS;
 }
